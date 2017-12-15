@@ -59,16 +59,15 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	char recbytes[4096];
 	string path = pathStruct.url;
 	string start = "new thread for image ";
+	writeInfoFile(start + path + "\n");
 
 	string imagePath = "";
 	string image = "";
-	cout << path << endl;
 	string::size_type pos = path.find("/");
 	if (pos != string::npos)
 	{
 		imagePath = path.substr(pos, path.length() - pos);
 		image = path.substr(pos+1, path.length() - pos);
-		writeInfoFile(start + image + "\n");
 		_itoa(pathStruct.numb, imageid, 10);
 		image.insert(image.length() - 4, imageid);
 	}
