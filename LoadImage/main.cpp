@@ -48,12 +48,12 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	}
 	string hostPath;
 	hostPath = path.substr(0, pos);
-	cout << "host " << hostPath << endl;
-	cout << "path " << imagePath << endl;
-	cout << "image " << image << endl;
+	//cout << "host " << hostPath << endl;
+	//cout << "path " << imagePath << endl;
+	//cout << "image " << image << endl;
 
 	string get_http = "GET " + imagePath + " HTTP/1.1\r\nHost: " + hostPath + "\r\nConnection: close\r\n\r\n";
-	cout << get_http;
+	//cout << get_http;
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		cout << "WSAStartup failed.\n";
@@ -91,29 +91,31 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 
 	closesocket(Socket);
 	WSACleanup();
+	Sleep(2000);
+	cout << "Done";;
 	return 0;
 }
 
 int main(void) {
 
-	// website url
-	//HTTP GET
 	string smth = "localhost/Minions.jpg";
 	string smth2 = "localhost/home.jpg";
-	imName param1, param2;
-	param1.url = smth;
-	param2.url = smth2;
-	urls.push_back(param1);
-//	urls.push_back(param2);
+	int i = 0;
 	DWORD myThreadID;
 	HANDLE myHandle;
-	for (int i = 0; i < urls.size(); i++)
+	while (true)
 	{
-		urls[i].numb = i;
-		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
-		handles.push_back(myHandle);
+		string url;
+		cout << endl << "Image url: ";  cin >> url;
+		if (url == "z") break;
+		imName imageInfo;
+		imageInfo.url = url;
+		imageInfo.numb = i;
+		urls.push_back(imageInfo);
+		myHandle = CreateThread(0, 0, downloadImage, &imageInfo, 0, &myThreadID);
+		i++;
+
 	}
-	//CloseHandle(myHandle);
 	system("pause");
 	return 0;
 }
