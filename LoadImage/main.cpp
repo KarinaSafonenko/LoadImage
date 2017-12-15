@@ -9,6 +9,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <mutex>
+#include <ctime>
 using namespace std;
 
 #pragma comment(lib,"ws2_32.lib")
@@ -25,12 +26,28 @@ struct imName
 
 mutex m;
 vector<imName> urls;
-vector<HANDLE> handles;
+ofstream fout("log.txt");
+
+void writeInfoFile(string info)
+{
+	m.lock();
+
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer[80];                                // строка, в которой будет храниться текущее время
+
+	time(&rawtime);                               // текущая дата в секундах
+	timeinfo = localtime(&rawtime);               // текущее локальное время, представленное в структуре
+
+	strftime(buffer, 80, "%Y-%m-%d %X", timeinfo); // форматируем строку времени
+	fout << buffer << " thread: " << this_thread::get_id() << " ";
+	fout << info;
+	
+	m.unlock();
+}
 
 DWORD WINAPI downloadImage(LPVOID lpath) {
-	//Sleep(2000);
 	imName &pathStruct = *((imName*)lpath);
-	cout << "new thread " << this_thread::get_id() <<endl;
 	WSADATA wsaData;
 	SOCKET Socket;
 	SOCKADDR_IN SockAddr;
@@ -39,9 +56,9 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	char imageid[1000];
 	int i = 0;
 	int nDataLength;
-	//cout << "jhfgj";
-	//string &path = *((string*)lpath);
+	char recbytes[4096];
 	string path = pathStruct.url;
+	string start = "new thread for image ";
 
 	string imagePath = "";
 	string image = "";
@@ -51,9 +68,9 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	{
 		imagePath = path.substr(pos, path.length() - pos);
 		image = path.substr(pos+1, path.length() - pos);
+		writeInfoFile(start + image + "\n");
 		_itoa(pathStruct.numb, imageid, 10);
 		image.insert(image.length() - 4, imageid);
-		cout << "!!!" << image << "!!!" << endl;
 	}
 	string hostPath;
 	hostPath = path.substr(0, pos);
@@ -66,8 +83,8 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		cout << "WSAStartup failed.\n";
+		writeInfoFile("WSAStartup failed.\n");
 		system("pause");
-		//return 1;
 	}
 
 	Socket = socket(AF_INET, SOCK_STREAM, 0); //IPPROTO_TCP
@@ -78,7 +95,8 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	SockAddr.sin_addr.s_addr = *((unsigned long*)host->h_addr);
 
 	if (connect(Socket, (SOCKADDR*)(&SockAddr), sizeof(SockAddr)) != 0) {
-		cout << "Could not connect";
+		cout << "Could not connect" << endl;
+		writeInfoFile("Could not connect\n");
 		system("pause");
 	}
 
@@ -88,6 +106,9 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 
 	temp.open(image, ios::out | ios::binary);
 	if ((nDataLength = recv(Socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
+		_itoa(nDataLength, recbytes, 10);
+		string s = recbytes;
+		writeInfoFile("received " + s + " bytes\n");
 		int i = 0;
 		char *cpos = strstr(buffer, "\r\n\r\n");
 		temp.write(cpos + strlen("\r\n\r\n"), nDataLength - (cpos - buffer) - strlen("\r\n\r\n"));
@@ -95,18 +116,23 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	}
 
 	while ((nDataLength = recv(Socket, buffer, 1, 0)) > 0) {
+		_itoa(nDataLength, recbytes, 10);
+		string s = recbytes;
+		writeInfoFile("received "+ s + " bytes\n");
 		temp.write(buffer, nDataLength);
 	}
 
 	closesocket(Socket);
 	WSACleanup();
 	Sleep(2000);
+	writeInfoFile("Done.\n");
 	cout << "Done";;
 	return 0;
 }
 
 int main(void) {
 
+	setlocale(LC_ALL, "");
 	string smth = "localhost/Minions.jpg";
 	string smth2 = "localhost/home.jpg";
 	int i = 0;
@@ -122,6 +148,7 @@ int main(void) {
 		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
 		i++;
 	}
+	fout.close();
 	system("pause");
 	return 0;
 }
