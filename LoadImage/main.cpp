@@ -135,10 +135,10 @@ int main(void) {
 	string smth = "localhost/Minions.jpg";
 	string smth2 = "localhost/home.jpg";
 	int i = 0;
+	HANDLE myHandle = NULL;
 	while (true)
 	{
 		DWORD myThreadID;
-		HANDLE myHandle;
 		string url;
 		cout << endl << "Image url: ";  cin >> url;
 		if (url == "z") break;
@@ -147,6 +147,7 @@ int main(void) {
 		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
 		i++;
 	}
+	CloseHandle(myHandle);
 	fout.close();
 	system("pause");
 	return 0;
