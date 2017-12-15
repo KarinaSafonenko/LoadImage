@@ -16,13 +16,13 @@ struct imName
 {
 	string url;
 	int numb;
+	HANDLE descr;
 };
 
 vector<imName> urls;
 vector<HANDLE> handles;
 
 DWORD WINAPI downloadImage(LPVOID lpath) {
-	cout << "new thread" << endl;
 	WSADATA wsaData;
 	SOCKET Socket;
 	SOCKADDR_IN SockAddr;
@@ -33,6 +33,7 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	int nDataLength;
 	//string &path = *((string*)lpath);
 	imName &pathStruct = *((imName*)lpath);
+	cout << "new thread  " << pathStruct.descr << endl;
 	string path = pathStruct.url;
 
 	string imagePath = "";
@@ -113,6 +114,7 @@ int main(void) {
 		imageInfo.numb = i;
 		urls.push_back(imageInfo);
 		myHandle = CreateThread(0, 0, downloadImage, &imageInfo, 0, &myThreadID);
+		imageInfo.descr = myHandle;
 		i++;
 
 	}
