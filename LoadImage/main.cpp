@@ -8,6 +8,7 @@
 #include <sstream>
 #include <winsock2.h>
 #include <windows.h>
+#include <mutex>
 using namespace std;
 
 #pragma comment(lib,"ws2_32.lib")
@@ -16,13 +17,20 @@ struct imName
 {
 	string url;
 	int numb;
+	imName(string url, int numb) {
+		this->url = url;
+		this->numb = numb;
+	};
 };
 
+mutex m;
 vector<imName> urls;
 vector<HANDLE> handles;
 
 DWORD WINAPI downloadImage(LPVOID lpath) {
-	cout << "new thread" << endl;
+	//Sleep(2000);
+	imName &pathStruct = *((imName*)lpath);
+	cout << "new thread " << this_thread::get_id() <<endl;
 	WSADATA wsaData;
 	SOCKET Socket;
 	SOCKADDR_IN SockAddr;
@@ -31,12 +39,13 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	char imageid[1000];
 	int i = 0;
 	int nDataLength;
+	//cout << "jhfgj";
 	//string &path = *((string*)lpath);
-	imName &pathStruct = *((imName*)lpath);
 	string path = pathStruct.url;
 
 	string imagePath = "";
 	string image = "";
+	cout << path << endl;
 	string::size_type pos = path.find("/");
 	if (pos != string::npos)
 	{
@@ -101,20 +110,17 @@ int main(void) {
 	string smth = "localhost/Minions.jpg";
 	string smth2 = "localhost/home.jpg";
 	int i = 0;
-	DWORD myThreadID;
-	HANDLE myHandle;
 	while (true)
 	{
+		DWORD myThreadID;
+		HANDLE myHandle;
 		string url;
 		cout << endl << "Image url: ";  cin >> url;
 		if (url == "z") break;
-		imName imageInfo;
-		imageInfo.url = url;
-		imageInfo.numb = i;
+		imName imageInfo(url, i);
 		urls.push_back(imageInfo);
-		myHandle = CreateThread(0, 0, downloadImage, &imageInfo, 0, &myThreadID);
+		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
 		i++;
-
 	}
 	system("pause");
 	return 0;
