@@ -23,14 +23,23 @@ struct imName
 	};
 };
 
+SYSTEMTIME st;
+ofstream fout("loooo.txt");
 mutex m;
 vector<imName> urls;
 vector<HANDLE> handles;
 
 DWORD WINAPI downloadImage(LPVOID lpath) {
-	//Sleep(2000);
 	imName &pathStruct = *((imName*)lpath);
-	cout << "new thread " << this_thread::get_id() <<endl;
+	auto myid = this_thread::get_id();
+	stringstream ss;
+	ss << myid;
+	string mystring = ss.str();
+	string j = "dg";
+	GetLocalTime(&st);
+	fout << st.wDay << "." << st.wMonth << "." << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << " ";
+	fout << "new thread " << this_thread::get_id() << "for image "<< pathStruct.url <<endl;
+	//cout << "new thread " << this_thread::get_id() <<endl;
 	WSADATA wsaData;
 	SOCKET Socket;
 	SOCKADDR_IN SockAddr;
@@ -90,14 +99,22 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	if ((nDataLength = recv(Socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
 		int i = 0;
 		char *cpos = strstr(buffer, "\r\n\r\n");
-		temp.write(cpos + strlen("\r\n\r\n"), nDataLength - (cpos - buffer) - strlen("\r\n\r\n"));
-
+		int rec = nDataLength - (cpos - buffer) - strlen("\r\n\r\n");
+		temp.write(cpos + strlen("\r\n\r\n"), rec);
+		GetLocalTime(&st);
+		fout << st.wDay << "." << st.wMonth << "." << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << " ";
+		fout << "thread " << this_thread::get_id()<< "received " <<rec<< "bytes" << endl;
 	}
 
 	while ((nDataLength = recv(Socket, buffer, 1, 0)) > 0) {
 		temp.write(buffer, nDataLength);
+		GetLocalTime(&st);
+		fout << st.wDay << "." << st.wMonth << "." << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << " ";
+		fout << "thread " << this_thread::get_id() << "received " << nDataLength << "bytes" << endl;
 	}
-
+	GetLocalTime(&st);
+	fout << st.wDay << "." << st.wMonth << "." << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << " ";
+	fout << "thread " << this_thread::get_id() << "download finished " << nDataLength << "bytes" << endl;
 	closesocket(Socket);
 	WSACleanup();
 	Sleep(2000);
@@ -107,21 +124,21 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 
 int main(void) {
 
-	string smth = "localhost/Minions.jpg";
-	string smth2 = "localhost/home.jpg";
-	int i = 0;
-	while (true)
-	{
+		int i = 0;
+	//while (true)
+	//{
 		DWORD myThreadID;
 		HANDLE myHandle;
 		string url;
 		cout << endl << "Image url: ";  cin >> url;
-		if (url == "z") break;
+		//if (url == "z") break;
 		imName imageInfo(url, i);
 		urls.push_back(imageInfo);
 		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
 		i++;
-	}
+	//}
+	//fclose(pFile);
+		//fout.close();
 	system("pause");
 	return 0;
 }
