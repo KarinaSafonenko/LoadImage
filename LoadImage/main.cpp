@@ -1,4 +1,5 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #include <string.h>
 #include <iostream>
 #include <vector>
@@ -11,16 +12,28 @@ using namespace std;
 
 #pragma comment(lib,"ws2_32.lib")
 
+struct imName
+{
+	string url;
+	int numb;
+};
 
+vector<imName> urls;
+vector<HANDLE> handles;
 
-void downloadImage(string path) {
+DWORD WINAPI downloadImage(LPVOID lpath) {
+	cout << "new thread" << endl;
 	WSADATA wsaData;
 	SOCKET Socket;
 	SOCKADDR_IN SockAddr;
 	struct hostent *host;
 	char buffer[1000];
+	char imageid[1000];
 	int i = 0;
 	int nDataLength;
+	//string &path = *((string*)lpath);
+	imName &pathStruct = *((imName*)lpath);
+	string path = pathStruct.url;
 
 	string imagePath = "";
 	string image = "";
@@ -29,6 +42,9 @@ void downloadImage(string path) {
 	{
 		imagePath = path.substr(pos, path.length() - pos);
 		image = path.substr(pos+1, path.length() - pos);
+		_itoa(pathStruct.numb, imageid, 10);
+		image.insert(image.length() - 4, imageid);
+		cout << "!!!" << image << "!!!" << endl;
 	}
 	string hostPath;
 	hostPath = path.substr(0, pos);
@@ -75,7 +91,7 @@ void downloadImage(string path) {
 
 	closesocket(Socket);
 	WSACleanup();
-
+	return 0;
 }
 
 int main(void) {
@@ -83,49 +99,21 @@ int main(void) {
 	// website url
 	//HTTP GET
 	string smth = "localhost/Minions.jpg";
-	downloadImage(smth);
-	/*string get_http = "GET /Minions.jpg HTTP/1.1\r\nHost: " + url + "\r\nConnection: close\r\n\r\n";
-
-
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-		cout << "WSAStartup failed.\n";
-		system("pause");
-		//return 1;
+	string smth2 = "localhost/home.jpg";
+	imName param1, param2;
+	param1.url = smth;
+	param2.url = smth2;
+	urls.push_back(param1);
+//	urls.push_back(param2);
+	DWORD myThreadID;
+	HANDLE myHandle;
+	for (int i = 0; i < urls.size(); i++)
+	{
+		urls[i].numb = i;
+		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
+		handles.push_back(myHandle);
 	}
-
-	Socket = socket(AF_INET, SOCK_STREAM, 0); //IPPROTO_TCP
-	host = gethostbyname(url.c_str());
-
-	SockAddr.sin_port = htons(80);
-	SockAddr.sin_family = AF_INET;
-	SockAddr.sin_addr.s_addr = *((unsigned long*)host->h_addr);
-
-	if (connect(Socket, (SOCKADDR*)(&SockAddr), sizeof(SockAddr)) != 0) {
-		cout << "Could not connect";
-		system("pause");
-	}
-
-	// send GET / HTTP
-	send(Socket, get_http.c_str(), strlen(get_http.c_str()), 0);
-	fstream temp;
-
-	temp.open("ho.jpg", ios::out | ios::binary);
-	if ((nDataLength = recv(Socket, buffer, sizeof(buffer)-1, 0)) > 0) {
-		int i = 0;
-		char *cpos = strstr(buffer, "\r\n\r\n");
-		temp.write(cpos + strlen("\r\n\r\n"), nDataLength - (cpos - buffer) - strlen("\r\n\r\n"));
-	
-	}
-
-	while ((nDataLength = recv(Socket, buffer, 1, 0)) > 0) {
-		temp.write(buffer, nDataLength);
-	}
-
-	closesocket(Socket);
-	WSACleanup();
-	*/
-	// pause
-	//cout << "\n\nDone\n\n";
+	//CloseHandle(myHandle);
 	system("pause");
 	return 0;
 }
