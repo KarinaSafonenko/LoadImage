@@ -62,7 +62,7 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 
 	string imagePath = "";
 	string image = "";
-	cout << path << endl;
+	//cout << path << endl;
 	string::size_type pos = path.find("/");
 	if (pos != string::npos)
 	{
