@@ -25,6 +25,7 @@ struct imName
 };
 
 mutex m;
+vector<HANDLE> handles;
 vector<imName> urls;
 ofstream fout("log.txt");
 
@@ -58,6 +59,7 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 	int nDataLength;
 	char recbytes[4096];
 	string path = pathStruct.url;
+	char sendBytes[4096];
 	string start = "new thread for image ";
 	writeInfoFile(start + path + "\n");
 
@@ -101,6 +103,9 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 
 	// send GET / HTTP
 	send(Socket, get_http.c_str(), strlen(get_http.c_str()), 0);
+	/*_itoa(strlen(get_http.c_str()),sendBytes , 10);
+	string s = sendBytes;
+	writeInfoFile("send " + s + " bytes\n");*/
 	fstream temp;
 
 	temp.open(image, ios::out | ios::binary);
@@ -121,19 +126,20 @@ DWORD WINAPI downloadImage(LPVOID lpath) {
 		temp.write(buffer, nDataLength);
 	}
 
+	temp.close();
 	closesocket(Socket);
 	WSACleanup();
 	Sleep(2000);
 	writeInfoFile("Done.\n");
-	cout << "Done";;
+	//cout << "Done";;
 	return 0;
 }
 
 int main(void) {
 
 	setlocale(LC_ALL, "");
-	string smth = "localhost/Minions.jpg";
-	string smth2 = "localhost/home.jpg";
+	//string smth = "localhost/Minions.jpg";
+	//string smth2 = "localhost/home.jpg";
 	int i = 0;
 	HANDLE myHandle = NULL;
 	while (true)
@@ -145,9 +151,15 @@ int main(void) {
 		imName imageInfo(url, i);
 		urls.push_back(imageInfo);
 		myHandle = CreateThread(0, 0, downloadImage, &urls[i], 0, &myThreadID);
+		handles.push_back(myHandle);
 		i++;
 	}
-	CloseHandle(myHandle);
+	cout << "-------------------------" << endl;
+	cout << "Waiting for finishing download" << endl;
+	for (int i = 0; i < handles.size(); i++) {
+		WaitForSingleObject(handles[i], INFINITE);
+		CloseHandle(handles[i]);
+	}
 	fout.close();
 	system("pause");
 	return 0;
